@@ -48,12 +48,22 @@ export default async function handler(req, res) {
         status = 'live'; 
       }
 
+      const homeScore = homeCompetitor?.score ? parseInt(homeCompetitor.score) : null;
+      const awayScore = awayCompetitor?.score ? parseInt(awayCompetitor.score) : null;
+      
+      let advancingTeam = null;
+      if (status === 'finished' && homeScore === awayScore && homeScore !== null) {
+        if (homeCompetitor?.winner) advancingTeam = homeCompetitor.team.name;
+        else if (awayCompetitor?.winner) advancingTeam = awayCompetitor.team.name;
+      }
+
       return {
         home_team: homeCompetitor?.team?.name || 'TBD',
         away_team: awayCompetitor?.team?.name || 'TBD',
         start_time: event.date,
-        home_score: homeCompetitor?.score ? parseInt(homeCompetitor.score) : null,
-        away_score: awayCompetitor?.score ? parseInt(awayCompetitor.score) : null,
+        home_score: homeScore,
+        away_score: awayScore,
+        advancing_team: advancingTeam,
         status: status
       };
     });

@@ -93,6 +93,7 @@ export default function Admin() {
         if (m.id === id) {
           let finalValue = value;
           if ((field === 'home_score' || field === 'away_score') && value !== '') finalValue = parseInt(value);
+          if (field === 'advancing_team' && value === '') finalValue = null;
           return { ...m, [field]: finalValue };
         }
         return m;
@@ -111,6 +112,7 @@ export default function Admin() {
         if (p.id === id) {
           let finalValue = value;
           if ((field === 'home_score' || field === 'away_score' || field === 'points_earned') && value !== '') finalValue = parseInt(value);
+          if (field === 'advancing_team' && value === '') finalValue = null;
           return { ...p, [field]: finalValue };
         }
         return p;
@@ -194,6 +196,7 @@ export default function Admin() {
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>Match Teams</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Home Score</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Away Score</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Advancing</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>Status</th>
                     <th style={{ padding: '0.75rem', textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -236,6 +239,17 @@ export default function Admin() {
                           onChange={(e) => handleChange('matches', match.id, 'away_score', e.target.value)}
                           style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--surface-border)', color: 'white', padding: '0.5rem', borderRadius: '4px', width: '60px', textAlign: 'center' }}
                         />
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <select
+                          value={match.advancing_team || ''}
+                          onChange={(e) => handleChange('matches', match.id, 'advancing_team', e.target.value)}
+                          style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--surface-border)', color: 'white', padding: '0.5rem', borderRadius: '4px' }}
+                        >
+                          <option value="">None</option>
+                          <option value={match.home_team}>{match.home_team}</option>
+                          <option value={match.away_team}>{match.away_team}</option>
+                        </select>
                       </td>
                       <td style={{ padding: '0.75rem' }}>
                         <select 
@@ -319,6 +333,7 @@ export default function Admin() {
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>User</th>
                     <th style={{ padding: '0.75rem', textAlign: 'left' }}>Match</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Pick</th>
+                    <th style={{ padding: '0.75rem', textAlign: 'center' }}>Advancing Pick</th>
                     <th style={{ padding: '0.75rem', textAlign: 'center' }}>Points Earned</th>
                     <th style={{ padding: '0.75rem', textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -348,6 +363,17 @@ export default function Admin() {
                           onChange={(e) => handleChange('predictions', pred.id, 'away_score', e.target.value)}
                           style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--surface-border)', color: 'white', padding: '0.5rem', borderRadius: '4px', width: '50px', textAlign: 'center', marginLeft: '0.5rem' }}
                         />
+                      </td>
+                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <select
+                          value={pred.advancing_team || ''}
+                          onChange={(e) => handleChange('predictions', pred.id, 'advancing_team', e.target.value)}
+                          style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--surface-border)', color: 'white', padding: '0.5rem', borderRadius: '4px', maxWidth: '100px' }}
+                        >
+                          <option value="">None</option>
+                          <option value={pred.matches?.home_team}>{pred.matches?.home_team}</option>
+                          <option value={pred.matches?.away_team}>{pred.matches?.away_team}</option>
+                        </select>
                       </td>
                       <td style={{ padding: '0.75rem', textAlign: 'center' }}>
                         <input 

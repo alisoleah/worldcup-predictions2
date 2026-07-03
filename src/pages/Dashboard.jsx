@@ -46,7 +46,7 @@ export default function Dashboard() {
     if (predData) {
       const predMap = {};
       predData.forEach(p => {
-        predMap[p.match_id] = { home_score: p.home_score, away_score: p.away_score, id: p.id, points_earned: p.points_earned };
+        predMap[p.match_id] = { home_score: p.home_score, away_score: p.away_score, id: p.id, points_earned: p.points_earned, advancing_team: p.advancing_team };
       });
       setPredictions(predMap);
     }
@@ -78,19 +78,28 @@ export default function Dashboard() {
     await supabase.auth.signOut();
   };
 
-  const handlePredictionSubmit = async (matchId, homeScore, awayScore) => {
+  const handlePredictionSubmit = async (matchId, homeScore, awayScore, advancingTeam) => {
     if (homeScore === '' || awayScore === '') return;
+    
+    // Validate advancing team selection on draw
+    if (homeScore === awayScore && !advancingTeam) {
+      alert('Please select which team will advance (in case of a draw).');
+      return;
+    }
+    
+    // Clear advancing team if it's not a draw
+    const finalAdvancingTeam = homeScore === awayScore ? advancingTeam : null;
     
     const existing = predictions[matchId];
     
     if (existing) {
       const { error } = await supabase
         .from('predictions')
-        .update({ home_score: parseInt(homeScore), away_score: parseInt(awayScore) })
+        .update({ home_score: parseInt(homeScore), away_score: parseInt(awayScore), advancing_team: finalAdvancingTeam })
         .eq('id', existing.id);
         
       if (!error) {
-        setPredictions(prev => ({ ...prev, [matchId]: { ...prev[matchId], home_score: parseInt(homeScore), away_score: parseInt(awayScore) }}));
+        setPredictions(prev => ({ ...prev, [matchId]: { ...prev[matchId], home_score: parseInt(homeScore), away_score: parseInt(awayScore), advancing_team: finalAdvancingTeam }}));
         alert('Prediction updated!');
       } else {
         alert('Error updating prediction: ' + error.message);
@@ -102,13 +111,14 @@ export default function Dashboard() {
           user_id: user.id,
           match_id: matchId,
           home_score: parseInt(homeScore),
-          away_score: parseInt(awayScore)
+          away_score: parseInt(awayScore),
+          advancing_team: finalAdvancingTeam
         })
         .select()
         .single();
         
       if (!error && data) {
-        setPredictions(prev => ({ ...prev, [matchId]: { home_score: data.home_score, away_score: data.away_score, id: data.id, points_earned: 0 }}));
+        setPredictions(prev => ({ ...prev, [matchId]: { home_score: data.home_score, away_score: data.away_score, id: data.id, points_earned: 0, advancing_team: data.advancing_team }}));
         alert('Prediction saved!');
       } else {
         alert('Error saving prediction: ' + error.message);
@@ -250,6 +260,11 @@ export default function Dashboard() {
                           </td>
                           <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center', fontWeight: 'bold' }}>
                             {pred.home_score} - {pred.away_score}
+                            {pred.home_score === pred.away_score && pred.advancing_team && (
+                              <div style={{ fontSize: '0.75rem', color: 'var(--accent-color)' }}>
+                                {getFlag(pred.advancing_team)} Advances
+                              </div>
+                            )}
                           </td>
                           <td style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>
                             {(match.status === 'finished' || match.status === 'live') ? `${match.home_score ?? '-'} - ${match.away_score ?? '-'}` : '-'}
@@ -322,6 +337,9 @@ function MatchCard({ match, prediction, onSubmit }) {
   
   const [homeScore, setHomeScore] = useState(prediction?.home_score ?? '');
   const [awayScore, setAwayScore] = useState(prediction?.away_score ?? '');
+  const [advancingTeam, setAdvancingTeam] = useState(prediction?.advancing_team ?? '');
+  
+  const isDraw = homeScore !== '' && awayScore !== '' && homeScore === awayScore;
 
   return (
     <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: isStarted ? '4px solid var(--text-secondary)' : '4px solid var(--accent-color)' }}>
@@ -374,9 +392,37 @@ function MatchCard({ match, prediction, onSubmit }) {
         </div>
       </div>
 
+      {!isStarted && isDraw && (
+        <div style={{ marginTop: '0.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--surface-border)' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.9rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Who will advance if it's a draw?</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input 
+                type="radio" 
+                name={`advancing-${match.id}`} 
+                value={match.home_team} 
+                checked={advancingTeam === match.home_team}
+                onChange={(e) => setAdvancingTeam(e.target.value)}
+              />
+              <span>{match.home_team}</span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <input 
+                type="radio" 
+                name={`advancing-${match.id}`} 
+                value={match.away_team} 
+                checked={advancingTeam === match.away_team}
+                onChange={(e) => setAdvancingTeam(e.target.value)}
+              />
+              <span>{match.away_team}</span>
+            </label>
+          </div>
+        </div>
+      )}
+
       {!isStarted && (
         <button 
-          onClick={() => onSubmit(match.id, homeScore, awayScore)}
+          onClick={() => onSubmit(match.id, homeScore, awayScore, advancingTeam)}
           className="btn-primary" 
           style={{ width: '100%', marginTop: '0.5rem' }}
         >
