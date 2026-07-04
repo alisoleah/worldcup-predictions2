@@ -298,7 +298,7 @@ export default function Dashboard() {
               <Users size={24} /> Global Predictions
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {matches.map(match => {
+              {[...matches].sort((a, b) => new Date(b.start_time) - new Date(a.start_time)).map(match => {
                 const matchPreds = allPredictionsData.filter(p => p.match_id === match.id);
                 if (matchPreds.length === 0) return null;
                 
@@ -338,6 +338,7 @@ function MatchCard({ match, prediction, onSubmit }) {
   const [homeScore, setHomeScore] = useState(prediction?.home_score ?? '');
   const [awayScore, setAwayScore] = useState(prediction?.away_score ?? '');
   const [advancingTeam, setAdvancingTeam] = useState(prediction?.advancing_team ?? '');
+  const [showPrediction, setShowPrediction] = useState(false);
   
   const isDraw = homeScore !== '' && awayScore !== '' && homeScore === awayScore;
 
@@ -430,20 +431,40 @@ function MatchCard({ match, prediction, onSubmit }) {
         </button>
       )}
 
-      {isStarted && prediction && (
-        <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', textAlign: 'center', fontSize: '0.875rem' }}>
-          Your Prediction: <strong>{prediction.home_score} - {prediction.away_score}</strong>
-          {match.status === 'finished' && (
-            <div style={{ marginTop: '0.25rem', color: 'var(--warning-color)', fontWeight: 'bold' }}>
-              Points Earned: {prediction.points_earned}
+      {isStarted && (
+        <div style={{ marginTop: '0.5rem' }}>
+          <button 
+            onClick={() => setShowPrediction(!showPrediction)}
+            style={{ 
+              width: '100%', 
+              padding: '0.5rem', 
+              fontSize: '0.875rem', 
+              background: 'transparent', 
+              border: '1px solid var(--accent-color)', 
+              color: 'var(--accent-color)', 
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {showPrediction ? 'Hide Your Prediction' : 'Show Your Prediction'}
+          </button>
+          
+          {showPrediction && prediction && (
+            <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', textAlign: 'center', fontSize: '0.875rem' }}>
+              Your Prediction: <strong>{prediction.home_score} - {prediction.away_score}</strong>
+              {match.status === 'finished' && (
+                <div style={{ marginTop: '0.25rem', color: 'var(--warning-color)', fontWeight: 'bold' }}>
+                  Points Earned: {prediction.points_earned}
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
-      
-      {isStarted && !prediction && (
-        <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', textAlign: 'center', fontSize: '0.875rem', color: 'var(--danger-color)' }}>
-          You did not make a prediction for this match.
+          
+          {showPrediction && !prediction && (
+            <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', textAlign: 'center', fontSize: '0.875rem', color: 'var(--danger-color)' }}>
+              You did not make a prediction for this match.
+            </div>
+          )}
         </div>
       )}
     </div>
